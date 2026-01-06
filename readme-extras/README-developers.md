@@ -48,7 +48,13 @@ backend in development mode:
 	```bash
 	python run_model.py <name>
 	```
-	
+
+	OpenAI TTS runs as a microservice too:
+
+	```bash
+	OPENAI_API_KEY=... python run_model.py openai_tts
+	```
+
 
 4. **Access the application:**
 
@@ -73,3 +79,10 @@ This repo has some extra features for developers. In no particular order:
 * `make local-expose-host`, `make main-expose-host` and `make frontend-expose-host` are all for LAN
 	debugging, which allows for a user to test Windows Edge against another laptop on the same
 	LAN network (for example). 
+
+## OpenAI development notes
+
+* Set `OPENAI_API_KEY` to enable OpenAI-backed workflows.
+* `TEXT_LLM_PROVIDER=openai` will route the text-to-LLM workflow to OpenAI; `gemini` keeps the
+  existing Gemini path.
+* The OpenAI TTS service is remote and uses preset voices (no local voice cloning).

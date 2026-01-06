@@ -21,6 +21,7 @@ from backend.text_workflows.csv_to_psss import csv_content_to_script
 from backend.text_workflows.websocket_utils import send_text_workflow_progress
 from backend.core.config import SCRIPTS_DIR
 import os
+from backend.core.openai_client import create_chat_completion
 
 # Configuration
 # Trying a much higher window. Previously 1024.
@@ -171,6 +172,10 @@ class RobustTextToScriptWorkflow:
         self,
         ollama_url: str = "http://127.0.0.1:11434",
         model_name: str = None,
+        llm_provider: str = "ollama",
+        openai_model: Optional[str] = None,
+        openai_reasoning_effort: str = "medium",
+        openai_api_key: Optional[str] = None,
         execution_id: Optional[str] = None,
     ):
         if not ollama_url:
@@ -179,6 +184,10 @@ class RobustTextToScriptWorkflow:
         self.ollama_url = ollama_url
         self.model_name = model_name
         self.execution_id = execution_id
+        self.llm_provider = (llm_provider or "ollama").lower()
+        self.openai_model = openai_model or "gpt-5.2"
+        self.openai_reasoning_effort = openai_reasoning_effort
+        self.openai_api_key = openai_api_key
         self.llm = None
         self.character_list = []  # Never include Narrator
         self.running_predictions = {}
@@ -207,6 +216,12 @@ class RobustTextToScriptWorkflow:
         """Initialize the Ollama LLM connection."""
         if self.llm is None:
             try:
+                if self.llm_provider == "openai":
+                    await self._log_progress(
+                        f"Using OpenAI LLM with model: {self.openai_model}"
+                    )
+                    return
+
                 if not self.model_name:
                     # Auto-detect available model
                     import requests
@@ -229,6 +244,34 @@ class RobustTextToScriptWorkflow:
             except Exception as e:
                 await self._log_progress(f"Failed to initialize LLM: {str(e)}", "ERROR")
                 raise
+
+    def _build_openai_messages(
+        self, messages: List[Any]
+    ) -> List[Dict[str, str]]:
+        openai_messages = []
+        for message in messages:
+            if isinstance(message, SystemMessage):
+                role = "system"
+            elif isinstance(message, HumanMessage):
+                role = "user"
+            else:
+                role = "user"
+            content = message.content if hasattr(message, "content") else str(message)
+            openai_messages.append({"role": role, "content": content})
+        return openai_messages
+
+    def _invoke_llm(self, messages: List[Any]) -> str:
+        if self.llm_provider == "openai":
+            return create_chat_completion(
+                messages=self._build_openai_messages(messages),
+                api_key=self.openai_api_key,
+                model=self.openai_model,
+                reasoning_effort=self.openai_reasoning_effort,
+                temperature=0.3,
+            )
+
+        response = self.llm.invoke(messages)
+        return response.content
 
     async def step2_separate_dialogue(self, text: str, est_total_steps: int) -> str:
         """Step 2: Separate dialogue and narrative with regex-based approach."""
@@ -338,10 +381,10 @@ class RobustTextToScriptWorkflow:
             for attempt in range(MAX_RETRIES):
                 try:
                     messages = [HumanMessage(content=prompt)]
-                    response = self.llm.invoke(messages)
+                    response_content = self._invoke_llm(messages)
 
                     # Clean JSON response
-                    cleaned_response = response.content.strip()
+                    cleaned_response = response_content.strip()
                     cleaned_response = cleaned_response.replace("```json", "").replace(
                         "```", ""
                     )
@@ -604,13 +647,13 @@ class RobustTextToScriptWorkflow:
                         SystemMessage(content=system_prompt),
                         HumanMessage(content=prompt),
                     ]
-                    response = self.llm.invoke(messages)
+                    response_content = self._invoke_llm(messages)
                     await self._log_progress(
-                        f"Raw LLM response: {response.content[:200]}..."
+                        f"Raw LLM response: {response_content[:200]}..."
                     )
 
                     # Clean JSON response - remove markdown code blocks
-                    cleaned_response = response.content.strip()
+                    cleaned_response = response_content.strip()
                     cleaned_response = cleaned_response.replace("```json", "").replace(
                         "```", ""
                     )
