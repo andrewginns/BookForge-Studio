@@ -12,9 +12,6 @@ async def process(context):
     Args:
         context: StepContext to set parameters
     """
-    if "voice" not in context.parameters:
-        context.parameters["voice"] = "marin"
-
     if "response_format" not in context.parameters:
         context.parameters["response_format"] = "wav"
 
@@ -34,11 +31,6 @@ STEP_METADATA = {
     "version": "1.0.0",
     "model_requirement": "openai_tts",
     "parameters": {
-        "voice": {
-            "type": "string",
-            "default": "marin",
-            "description": "Preset OpenAI voice name",
-        },
         "response_format": {
             "type": "string",
             "default": "wav",
