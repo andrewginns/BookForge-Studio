@@ -21,6 +21,10 @@ async def process(
     filepath: Optional[str] = None,
     ollama_url: Optional[str] = None,
     model_name: Optional[str] = None,
+    llm_provider: Optional[str] = None,
+    openai_model: Optional[str] = None,
+    openai_reasoning_effort: Optional[str] = None,
+    openai_api_key: Optional[str] = None,
     execution_id: Optional[str] = None,
 ) -> Script:
     """
@@ -66,6 +70,10 @@ async def process(
         workflow = RobustTextToScriptWorkflow(
             ollama_url=ollama_url,
             model_name=model_name,
+            llm_provider=llm_provider,
+            openai_model=openai_model,
+            openai_reasoning_effort=openai_reasoning_effort or "medium",
+            openai_api_key=openai_api_key,
             execution_id=execution_id,
         )
 

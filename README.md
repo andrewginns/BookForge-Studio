@@ -26,6 +26,7 @@
 * Optional: You can run multiple AI models at once if you wish.
 
 * Optional: You can also run [Ollama](https://ollama.com/) for local speaker identification. 
+* Optional: You can run OpenAI-backed workflows for speaker identification, script generation, and TTS (see below).
 
 ## Tutorial video: How to install and use (Runpod and Windows)
 
@@ -67,6 +68,42 @@
    said it, what actor and voice mode is assigned, and links to all generated audio. (We say "chapter" not "book" because the performance will be awful in several ways if you try to do an entire book in one file.)
 * **Text Workflows**: Various ways to turn text or a CSV into a BFS Script. These can include
    using external api's, a local LLM (hosted with ollama), or simply dragging a pre-annotated CSV.
+
+## OpenAI SDK setup (optional)
+
+BookForge Studio can call OpenAI models for text workflows and TTS. This requires network access
+and an `OPENAI_API_KEY`.
+
+### Environment variables
+
+* `OPENAI_API_KEY` (required) - API key for OpenAI SDK usage.
+* `TEXT_LLM_PROVIDER` (optional) - set to `openai` (default) or `gemini` for the text-to-LLM workflow.
+* `OPENAI_CHAT_MODEL` (optional) - default `gpt-5.2`.
+* `OPENAI_REASONING_EFFORT` (optional) - default `medium`.
+* `OPENAI_TTS_MODEL` (optional) - default `gpt-4o-mini-tts-2025-12-15`.
+* `OPENAI_TTS_DEFAULT_VOICE` (optional) - default `marin`.
+
+### Running OpenAI TTS
+
+1. Export your API key: `export OPENAI_API_KEY=...`
+1. Start the OpenAI TTS microservice:
+   * Unix: `make openai-tts-service`
+   * All platforms: `python run_model.py openai_tts`
+1. Use or create a Voice Mode that includes the OpenAI TTS steps.
+
+### Using OpenAI for text workflows
+
+* **Text to LLM API** workflow: set `provider` to `openai` (or set `TEXT_LLM_PROVIDER=openai`).
+* **Robust speaker identification** workflow: set `llm_provider=openai` and optionally pass
+  `openai_model` / `openai_reasoning_effort`.
+
+## OpenAI limitations compared to local providers
+
+* **No voice cloning by default**: OpenAI TTS uses preset voices and cannot clone local clips
+  without custom voice access. The service maps voice IDs to preset voices or falls back to the
+  default voice and optional style instructions.
+* **Network + API costs**: OpenAI models require internet access and incur API usage costs.
+* **Latency and rate limits**: remote calls can be slower or limited compared to local models.
 
 ## Adding files (audio, text, etc.) into your project
 
