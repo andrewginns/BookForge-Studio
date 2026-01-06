@@ -31,6 +31,10 @@ vibevoice-service: ## Start the vibevoice service
 vibevoice-large-service: ## Start the vibevoice large (7B) service
 	python run_model.py vibevoice --large
 
+.PHONY: openai-tts-service
+openai-tts-service: ## Start the OpenAI TTS service
+	python run_model.py openai_tts
+
 ## [For developers] Run locally with hot reload
 
 .PHONY: local

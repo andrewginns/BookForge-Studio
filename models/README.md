@@ -220,6 +220,26 @@ Common error codes:
 - `ras_win_max_num_repeat`: 2 (default) - RAS max repeats
 - `seed`: Optional
 
+### OpenAI TTS (Port 8007)
+**Capabilities:**
+- ✅ Single-speaker TTS (`/v1/text-to-speech/{voice_id}`)
+- ✅ Multi-speaker dialogue (`/v1/text-to-dialogue`)
+
+**Requirements:**
+- Python 3.10+
+- `OPENAI_API_KEY` environment variable
+- Internet access
+- Model: `gpt-4o-mini-tts-2025-12-15` (configurable via `OPENAI_TTS_MODEL`)
+
+**Limitations:**
+- Preset voices only (no local voice cloning by default).
+- Remote API latency and rate limits apply.
+
+**Parameters:**
+- `voice`: Optional preset voice override (e.g., `marin`, `cedar`)
+- `instructions`: Style guidance for the voice
+- `response_format`: Recommended `wav` for multi-speaker concatenation
+
 ### Mock (Port 8999)
 **Capabilities:**
 - ✅ Single-speaker TTS (copies voice file)
