@@ -100,8 +100,6 @@ async def process(
             response_content = create_chat_completion(
                 messages=[{"role": "user", "content": full_prompt}],
                 api_key=api_key,
-                model="gpt-5.2",
-                reasoning_effort="medium",
             )
             response_data = {
                 "choices": [{"message": {"content": response_content}}],

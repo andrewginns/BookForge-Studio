@@ -174,7 +174,7 @@ class RobustTextToScriptWorkflow:
         model_name: str = None,
         llm_provider: str = "ollama",
         openai_model: Optional[str] = None,
-        openai_reasoning_effort: str = "medium",
+        openai_reasoning_effort: Optional[str] = None,
         openai_api_key: Optional[str] = None,
         execution_id: Optional[str] = None,
     ):
@@ -185,7 +185,7 @@ class RobustTextToScriptWorkflow:
         self.model_name = model_name
         self.execution_id = execution_id
         self.llm_provider = (llm_provider or "ollama").lower()
-        self.openai_model = openai_model or "gpt-5.2"
+        self.openai_model = openai_model
         self.openai_reasoning_effort = openai_reasoning_effort
         self.openai_api_key = openai_api_key
         self.llm = None

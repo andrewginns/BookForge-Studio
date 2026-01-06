@@ -72,7 +72,7 @@ async def process(
             model_name=model_name,
             llm_provider=llm_provider,
             openai_model=openai_model,
-            openai_reasoning_effort=openai_reasoning_effort or "medium",
+            openai_reasoning_effort=openai_reasoning_effort,
             openai_api_key=openai_api_key,
             execution_id=execution_id,
         )

@@ -24,15 +24,17 @@ def get_openai_client(api_key: Optional[str] = None) -> OpenAI:
 def create_chat_completion(
     messages: List[Dict[str, str]],
     api_key: Optional[str] = None,
-    model: str = DEFAULT_OPENAI_MODEL,
-    reasoning_effort: str = DEFAULT_OPENAI_REASONING_EFFORT,
+    model: Optional[str] = None,
+    reasoning_effort: Optional[str] = None,
     temperature: Optional[float] = None,
 ) -> str:
     client = get_openai_client(api_key)
+    resolved_model = model or DEFAULT_OPENAI_MODEL
+    resolved_reasoning_effort = reasoning_effort or DEFAULT_OPENAI_REASONING_EFFORT
     response = client.chat.completions.create(
-        model=model,
+        model=resolved_model,
         messages=messages,
-        reasoning_effort=reasoning_effort,
+        reasoning_effort=resolved_reasoning_effort,
         temperature=temperature,
     )
     return response.choices[0].message.content

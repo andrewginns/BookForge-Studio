@@ -6,6 +6,7 @@ FastAPI service for OpenAI text-to-speech using preset voices.
 Provides ElevenLabs-compatible endpoints.
 """
 
+import hashlib
 import logging
 import os
 import tempfile
@@ -110,7 +111,10 @@ def select_voice(voice_key: Optional[str], fallback_index: int = 0) -> str:
         return normalized
 
     if voice_key:
-        hashed_index = abs(hash(voice_key)) % len(AVAILABLE_VOICES)
+        hashed_index = (
+            int(hashlib.sha256(voice_key.encode("utf-8")).hexdigest(), 16)
+            % len(AVAILABLE_VOICES)
+        )
         return AVAILABLE_VOICES[hashed_index]
 
     return AVAILABLE_VOICES[fallback_index % len(AVAILABLE_VOICES)]
