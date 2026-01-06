@@ -30,15 +30,18 @@ from backend.text_workflows.websocket_utils import (
     send_text_workflow_complete,
     send_text_workflow_error,
 )
+from backend.core.openai_client import create_chat_completion
 
 API_URL = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions"
 API_KEY = os.getenv("GEMINI_API_KEY")
+DEFAULT_PROVIDER = os.getenv("TEXT_LLM_PROVIDER", "openai")
 
 
 async def process(
     filepath: str = None,
     text: str = None,
     api_key: str = None,
+    provider: Optional[str] = None,
     execution_id: Optional[str] = None,
 ) -> Script:
     workflow_name = "text_to_llm_api"
@@ -49,9 +52,10 @@ async def process(
             0, 4, "Starting LLM API workflow", workflow_name, execution_id
         )
 
-        final_api_key = api_key or API_KEY
-        if final_api_key is None:
-            raise ValueError("API key is required")
+        llm_provider = (provider or DEFAULT_PROVIDER).lower()
+        final_api_key = api_key or (API_KEY if llm_provider == "gemini" else None)
+        if llm_provider == "gemini" and final_api_key is None:
+            raise ValueError("API key is required for Gemini")
 
         # Check if we have either a file or text input
         if not filepath and not text:
@@ -91,25 +95,37 @@ async def process(
             2, 4, "Sending request to LLM API", workflow_name, execution_id
         )
 
-        # Prepare the request payload
-        payload = {
-            "model": "gemini-2.5-pro",
-            "reasoning_effort": "high",
-            "messages": [{"role": "user", "content": full_prompt}],
-        }
+        response_data: Dict[str, Any]
+        if llm_provider == "openai":
+            response_content = create_chat_completion(
+                messages=[{"role": "user", "content": full_prompt}],
+                api_key=api_key,
+            )
+            response_data = {
+                "choices": [{"message": {"content": response_content}}],
+            }
+        elif llm_provider == "gemini":
+            # Prepare the request payload
+            payload = {
+                "model": "gemini-2.5-pro",
+                "reasoning_effort": "high",
+                "messages": [{"role": "user", "content": full_prompt}],
+            }
 
-        # Headers
-        headers = {
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {final_api_key}",
-        }
+            # Headers
+            headers = {
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {final_api_key}",
+            }
 
-        # Make the API request
-        response = requests.post(API_URL, headers=headers, json=payload)
-        response.raise_for_status()
+            # Make the API request
+            response = requests.post(API_URL, headers=headers, json=payload)
+            response.raise_for_status()
 
-        # Parse the response
-        response_data = response.json()
+            # Parse the response
+            response_data = response.json()
+        else:
+            raise ValueError(f"Unsupported LLM provider: {llm_provider}")
 
         await send_text_workflow_progress(
             3, 4, "Processing LLM response", workflow_name, execution_id
@@ -140,6 +156,7 @@ def process_sync(
     filepath: str = None,
     text: str = None,
     api_key: str = None,
+    provider: Optional[str] = None,
     execution_id: Optional[str] = None,
 ) -> Script:
     """Synchronous wrapper for the async process function."""
@@ -151,12 +168,14 @@ def process_sync(
 
             with concurrent.futures.ThreadPoolExecutor() as executor:
                 future = executor.submit(
-                    lambda: asyncio.run(process(filepath, text, api_key, execution_id))
+                    lambda: asyncio.run(
+                        process(filepath, text, api_key, provider, execution_id)
+                    )
                 )
                 return future.result()
         else:
             # We're not in an async context
-            return asyncio.run(process(filepath, text, api_key, execution_id))
+            return asyncio.run(process(filepath, text, api_key, provider, execution_id))
     except Exception as e:
         # Run the error reporting in a new loop if needed
         try:

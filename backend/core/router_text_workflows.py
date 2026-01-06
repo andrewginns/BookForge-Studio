@@ -50,7 +50,8 @@ class TextToLlmApiRequest(BaseModel):
 
     filepath: Optional[str] = None
     text: Optional[str] = None
-    api_key: str
+    api_key: Optional[str] = None
+    provider: Optional[str] = None
 
 
 class TextToScriptViaOllamaRequest(BaseModel):
@@ -58,6 +59,10 @@ class TextToScriptViaOllamaRequest(BaseModel):
     text: Optional[str] = None
     ollama_url: Optional[str] = None
     model_name: Optional[str] = None
+    llm_provider: Optional[str] = None
+    openai_model: Optional[str] = None
+    openai_reasoning_effort: Optional[str] = None
+    openai_api_key: Optional[str] = None
 
 
 # Background execution request model
@@ -158,6 +163,7 @@ async def text_to_llm_api(request: TextToLlmApiRequest):
                 "filepath": request.filepath,
                 "text": request.text,
                 "api_key": request.api_key,
+                "provider": request.provider,
             },
             execution_id,
         )
@@ -197,6 +203,10 @@ async def text_to_script_via_ollama(request: TextToScriptViaOllamaRequest):
                 "filepath": request.filepath,
                 "ollama_url": request.ollama_url,
                 "model_name": request.model_name,
+                "llm_provider": request.llm_provider,
+                "openai_model": request.openai_model,
+                "openai_reasoning_effort": request.openai_reasoning_effort,
+                "openai_api_key": request.openai_api_key,
             },
             execution_id,
         )
@@ -235,18 +245,19 @@ async def _execute_text_workflow_background(
             filepath = parameters.get("filepath")
             text = parameters.get("text")
             api_key = parameters.get("api_key")
+            provider = parameters.get("provider")
 
             if not filepath and not text:
                 raise ValueError(
                     "Either filepath or text parameter required for text_to_llm_api workflow"
                 )
-            if not api_key:
-                raise ValueError(
-                    "api_key parameter required for text_to_llm_api workflow"
-                )
 
             script = text_to_llm_api_process(
-                filepath=filepath, text=text, api_key=api_key, execution_id=execution_id
+                filepath=filepath,
+                text=text,
+                api_key=api_key,
+                provider=provider,
+                execution_id=execution_id,
             )
             result = {"script": script.model_dump()}
 
@@ -255,6 +266,10 @@ async def _execute_text_workflow_background(
             text = parameters.get("text")
             ollama_url = parameters.get("ollama_url")
             model_name = parameters.get("model_name")
+            llm_provider = parameters.get("llm_provider")
+            openai_model = parameters.get("openai_model")
+            openai_reasoning_effort = parameters.get("openai_reasoning_effort")
+            openai_api_key = parameters.get("openai_api_key")
 
             if not filepath and not text:
                 raise ValueError(
@@ -271,6 +286,10 @@ async def _execute_text_workflow_background(
                 filepath=filepath,
                 ollama_url=ollama_url,
                 model_name=model_name,
+                llm_provider=llm_provider,
+                openai_model=openai_model,
+                openai_reasoning_effort=openai_reasoning_effort,
+                openai_api_key=openai_api_key,
                 execution_id=execution_id,
             )
             result = {"script": script.model_dump()}
